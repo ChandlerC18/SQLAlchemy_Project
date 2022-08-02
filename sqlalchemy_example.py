@@ -74,3 +74,18 @@ result = conn.execute(stmt, {"x": "A", "y": "L"})
 #    )
 # )
 # conn.execute(s, x = 'A', y = 'L').fetchall()
+
+# alias example
+from sqlalchemy.sql import alias, select
+st = students.alias("a")
+s = select([st]).where(st.c.id > 2) # SQL expression: 'SELECT a.id, a.name, a.lastname FROM students AS a WHERE a.id > 2'
+conn.execute(s).fetchall()
+
+# UPDATE example
+stmt = students.update().where(students.c.lastname == 'Khanna').values(lastname = 'Kapoor') # SQL expression: 'UPDATE students SET lastname = :lastname WHERE students.lastname = :lastname_1'
+conn.execute(stmt)
+s = students.select()
+conn.execute(s).fetchall()
+
+# from sqlalchemy.sql.expression import update
+# stmt = update(students).where(students.c.lastname == 'Khanna').values(lastname = 'Kapoor') # same functionality as above but with update function
