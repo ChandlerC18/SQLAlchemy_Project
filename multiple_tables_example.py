@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey
 from sqlalchemy.sql import select
+from sqlalchemy import join
 
 engine = create_engine('sqlite:///college.db', echo=True)
 meta = MetaData()
@@ -50,3 +51,25 @@ result = conn.execute(s)
 
 for row in result:
    print (row)
+
+# multiple tables update (SQLite doesn't support multiple-table criteria within UPDATE)
+                                              # SQL expession:
+# stmt = students.update().\                  # UPDATE students
+# values({                                    # SET email_add = :addresses_email_add, name = :name
+#    students.c.name:'xyz',                   # FROM addresses
+#    addresses.c.email_add:'abc@xyz.com'      # WHERE students.id = addresses.id
+# }).\
+# where(students.c.id == addresses.c.id)
+
+# multiple tables delete (NotImplementedError if database does not support this method)
+                                                            # SQL expression:
+stmt = users.delete().\                                     # DELETE FROM users USING addresses
+   where(users.c.id == addresses.c.id).\                    # WHERE users.id = addresses.id
+   where(addresses.c.email_address.startswith('xyz%'))      # AND (addresses.email_address LIKE %(email_address_1)s || '%%')
+conn.execute(stmt)
+
+# join example
+j = students.join(addresses, students.c.id == addresses.c.st_id) # SQL expression: 'students JOIN addresses ON students.id = addresses.st_id'
+stmt = select([students]).select_from(j)
+result = conn.execute(stmt)
+result.fetchall()
