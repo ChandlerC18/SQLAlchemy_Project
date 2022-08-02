@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, func
 from sqlalchemy import join
+from sqlalchemy import and_, or_, not_, asc, desc, between
 
 engine = create_engine('sqlite:///college.db', echo=True)
 meta = MetaData()
@@ -73,3 +74,25 @@ j = students.join(addresses, students.c.id == addresses.c.st_id) # SQL expressio
 stmt = select([students]).select_from(j)
 result = conn.execute(stmt)
 result.fetchall()
+
+# conjunction examples
+
+# AND
+stmt = select([students]).where(and_(students.c.name == 'Ravi', students.c.id <3)) # SELECT students.id, students.name, students.lastname
+                                                                                   # FROM students WHERE students.name = :name_1 AND students.id < :id_1
+result = conn.execute(stmt)
+print (result.fetchall())
+
+# OR
+stmt = select([students]).where(or_(students.c.name == 'Ravi', students.c.id <3))  # WHERE students.name = :name_1 OR students.id < :id_1
+
+# NOT: not_()
+
+# ascending ORDER BY clause
+stmt = select([students]).order_by(asc(students.c.name))                           # ORDER BY students.name ASC
+
+# descending ORDER BY clause
+stmt = select([students]).order_by(desc(students.c.lastname))                      # ORDER BY students.lastname DESC
+
+# between
+stmt = select([students]).where(between(students.c.id,2,4))                        # BETWEEN :id_1 AND :id_2
