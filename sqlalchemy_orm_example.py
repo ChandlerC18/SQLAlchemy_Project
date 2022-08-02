@@ -282,3 +282,62 @@ for row in result:
 
 for u, count in session.query(Customer, stmt.c.invoice_count).outerjoin(stmt, Customer.id == stmt.c.custid).order_by(Customer.id):
    print(u.name, count)
+
+# relationship operators
+# SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers, invoices
+# WHERE invoices.invno = ?
+s = session.query(Customer).filter(Invoice.invno.__eq__(12)) # many-to-one "equals" comparison
+
+# SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers, invoices
+# WHERE invoices.custid != ?
+s = session.query(Customer).filter(Invoice.custid.__ne__(2)) # many-to-one "not equals" comparison
+
+# SQL expression:
+# SELECT invoices.id
+# AS invoices_id, invoices.custid
+# AS invoices_custid, invoices.invno
+# AS invoices_invno, invoices.amount
+# AS invoices_amount
+# FROM invoices
+# WHERE (invoices.invno LIKE '%' + ? || '%')
+s = session.query(Invoice).filter(Invoice.invno.contains([3,4,5])) # used for one-to-many collections
+
+# SQL expressions:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers
+# WHERE EXISTS (
+#    SELECT 1
+#    FROM invoices
+#    WHERE customers.id = invoices.custid
+#    AND invoices.invno = ?)
+s = session.query(Customer).filter(Customer.invoices.any(Invoice.invno==11))
+
+# SQL expressions:
+# SELECT invoices.id 
+# AS invoices_id, invoices.custid
+# AS invoices_custid, invoices.invno
+# AS invoices_invno, invoices.amount
+# AS invoices_amount
+# FROM invoices
+# WHERE EXISTS (
+#    SELECT 1
+#    FROM customers
+#    WHERE customers.id = invoices.custid
+#    AND customers.name = ?)
+s = session.query(Invoice).filter(Invoice.customer.has(name = 'Arjun Pandit'))
