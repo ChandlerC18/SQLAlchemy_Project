@@ -63,3 +63,14 @@ result = conn.execute(stmt, {"x": "A", "y": "L"})
 # from sqlalchemy.sql import select
 # s = select([text("students.name, students.lastname from students")]).where(text("students.name between :x and :y")) # can use the select function
 # conn.execute(s, x = 'A', y = 'L').fetchall()
+
+# from sqlalchemy import and_
+# from sqlalchemy.sql import select
+# s = select([text("* from students")]) \
+# .where(
+#    and_( # multiple conditions in WHERE clause
+#       text("students.name between :x and :y"),
+#       text("students.id>2")
+#    )
+# )
+# conn.execute(s, x = 'A', y = 'L').fetchall()
