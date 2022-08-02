@@ -89,3 +89,9 @@ conn.execute(s).fetchall()
 
 # from sqlalchemy.sql.expression import update
 # stmt = update(students).where(students.c.lastname == 'Khanna').values(lastname = 'Kapoor') # same functionality as above but with update function
+
+# DELETE example
+stmt = students.delete().where(students.c.id > 2) # SQL expression: 'DELETE FROM students WHERE students.id > :id_1'
+conn.execute(stmt)
+s = students.select()
+conn.execute(s).fetchall()
