@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine. text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import and_, or_
 
 # declaring mapping
@@ -125,7 +125,7 @@ result = session.query(Customers).filter(Customers.id>2, Customers.name.like('Ra
 result = session.query(Customers).filter(and_(Customers.id>2, Customers.name.like('Ra%'))) # using and_()
 
 # filter or SQL expression:
-# SELECT customers.id 
+# SELECT customers.id
 # AS customers_id, customers.name
 # AS customers_name, customers.address
 # AS customers_address, customers.email
@@ -136,3 +136,149 @@ result = session.query(Customers).filter(or_(Customers.id>2, Customers.name.like
 
 # for row in result:
 #    print ("ID:", row.id, "Name: ",row.name, "Address:",row.address, "Email:",row.email)
+
+# Query methods
+# SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers
+session.query(Customers).all() # returns a list
+
+# SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers
+# LIMIT ? OFFSET ?
+session.query(Customers).first() # returns a scalar (bound parameters for LIMIT is 1 and for OFFSET is 0.)
+
+session.query(Customers).one() # fetches all rows (no one object identity or composite row present in the result, raise error)
+
+# SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers
+# WHERE customers.id = ?
+session.query(Customers).filter(Customers.id == 3).scalar() # returns first column of row
+
+# Textual SQL
+# SQL expression
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers
+# WHERE id = ?
+cust = session.query(Customers).filter(text("id = :value")).params(value = 1).one()
+
+# link textual SQL to Core or ORM-mapped column expressions positionally
+stmt = text("SELECT name, id, name, address, email FROM customers")
+stmt = stmt.columns(Customers.id, Customers.name)
+session.query(Customers.id, Customers.name).from_statement(stmt).all()
+
+# building relationship
+# SQL expression
+# CREATE TABLE invoices (
+#    id INTEGER NOT NULL,
+#    custid INTEGER,
+#    invno INTEGER,
+#    amount INTEGER,
+#    PRIMARY KEY (id),
+#    FOREIGN KEY(custid) REFERENCES customers (id)
+# )
+class Invoice(Base):
+   __tablename__ = 'invoices'
+
+   id = Column(Integer, primary_key = True)
+   custid = Column(Integer, ForeignKey('customers.id'))
+   invno = Column(Integer)
+   amount = Column(Integer)
+   customer = relationship("Customer", back_populates = "invoices")
+
+Customer.invoices = relationship("Invoice", order_by = Invoice.id, back_populates = "customer")
+Base.metadata.create_all(engine)
+
+# related objects
+c1 = Customer(name = "Gopal Krishna", address = "Bank Street Hydarebad", email = "gk@gmail.com")
+c1.invoices = [Invoice(invno = 10, amount = 15000), Invoice(invno = 14, amount = 3850)]
+
+Session = sessionmaker(bind = engine)
+session = Session()
+session.add(c1)
+session.commit()
+
+c2 = [
+   Customer(
+      name = "Govind Pant",
+      address = "Gulmandi Aurangabad",
+      email = "gpant@gmail.com",
+      invoices = [Invoice(invno = 3, amount = 10000),
+      Invoice(invno = 4, amount = 5000)]
+   )
+]
+
+session.add(c2)
+session.commit()
+
+# add multiple customers
+rows = [
+   Customer(
+      name = "Govind Kala",
+      address = "Gulmandi Aurangabad",
+      email = "kala@gmail.com",
+      invoices = [Invoice(invno = 7, amount = 12000), Invoice(invno = 8, amount = 18500)]),
+
+   Customer(
+      name = "Abdul Rahman",
+      address = "Rohtak",
+      email = "abdulr@gmail.com",
+      invoices = [Invoice(invno = 9, amount = 15000),
+      Invoice(invno = 11, amount = 6000)
+   ])
+]
+
+session.add_all(rows)
+session.commit()
+
+# join
+# SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email, invoices.id
+# AS invoices_id, invoices.custid
+# AS invoices_custid, invoices.invno
+# AS invoices_invno, invoices.amount
+# AS invoices_amount
+# FROM customers, invoices
+# WHERE customers.id = invoices.custid
+for c, i in session.query(Customer, Invoice).filter(Customer.id == Invoice.custid).all():
+   print ("ID: {} Name: {} Invoice No: {} Amount: {}".format(c.id,c.name, i.invno, i.amount))
+
+# SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers JOIN invoices ON customers.id = invoices.custid
+# WHERE invoices.amount = ?
+session.query(Customer).join(Invoice).filter(Invoice.amount == 8500).all()
+
+result = session.query(Customer).join(Invoice).filter(Invoice.amount == 8500)
+for row in result:
+   for inv in row.invoices:
+      print (row.id, row.name, inv.invno, inv.amount)
+
+for u, count in session.query(Customer, stmt.c.invoice_count).outerjoin(stmt, Customer.id == stmt.c.custid).order_by(Customer.id):
+   print(u.name, count)
