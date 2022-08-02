@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, 
 from sqlalchemy.sql import select, func
 from sqlalchemy import join
 from sqlalchemy import and_, or_, not_, asc, desc, between
+from sqlalchemy import union, union_all, except_, intersect
 
 engine = create_engine('sqlite:///college.db', echo=True)
 meta = MetaData()
@@ -103,3 +104,64 @@ result = conn.execute(select([func.count(students.c.id)])) # count function
 result = conn.execute(select([func.max(employee.c.marks)])) # max function
 result = conn.execute(select([func.min(employee.c.marks)])) # min function
 result = conn.execute(select([func.avg(employee.c.marks)])) # avg function
+
+# set operations example
+# union SQL expression:
+# SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.email_add LIKE ? UNION SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.email_add LIKE ?
+
+u = union(addresses.select().where(addresses.c.email_add.like('%@gmail.com addresses.select().where(addresses.c.email_add.like('%@yahoo.com'))))
+
+result = conn.execute(u)
+result.fetchall()
+
+# union_all SQL expression:
+# SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.email_add LIKE ? UNION ALL SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.email_add LIKE ?
+u = union_all(addresses.select().where(addresses.c.email_add.like('%@gmail.com')), addresses.select().where(addresses.c.email_add.like('%@yahoo.com')))
+
+# except_ SQL expression:
+# SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.email_add LIKE ? EXCEPT SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.postal_add LIKE ?
+u = except_(addresses.select().where(addresses.c.email_add.like('%@gmail.com')), addresses.select().where(addresses.c.postal_add.like('%Pune')))
+
+# intersect SQL expression:
+# SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.email_add LIKE ? INTERSECT SELECT addresses.id,
+#    addresses.st_id,
+#    addresses.postal_add,
+#    addresses.email_add
+# FROM addresses
+# WHERE addresses.postal_add LIKE ?
+u = intersect(addresses.select().where(addresses.c.email_add.like('%@gmail.com')), addresses.select().where(addresses.c.postal_add.like('%Pune')))
