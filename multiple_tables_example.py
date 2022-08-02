@@ -96,3 +96,10 @@ stmt = select([students]).order_by(desc(students.c.lastname))                   
 
 # between
 stmt = select([students]).where(between(students.c.id,2,4))                        # BETWEEN :id_1 AND :id_2
+
+# functions example
+result = conn.execute(select([func.now()])).fetchone() # now function
+result = conn.execute(select([func.count(students.c.id)])) # count function
+result = conn.execute(select([func.max(employee.c.marks)])) # max function
+result = conn.execute(select([func.min(employee.c.marks)])) # min function
+result = conn.execute(select([func.avg(employee.c.marks)])) # avg function
