@@ -377,7 +377,7 @@ for x in c1.invoices:
    print ("Invoice no : {}, Amount : {}".format(x.invno, x.amount))
 
 # join load SQL expression:
-# SELECT customers.id 
+# SELECT customers.id
 # AS customers_id, customers.name
 # AS customers_name, customers.address
 # AS customers_address, customers.email
@@ -395,3 +395,19 @@ for x in c1.invoices:
 # WHERE customers.name = ? ORDER BY invoices_1.id
 # ('Govind Pant',)
 c1 = session.query(Customer).options(joinedload(Customer.invoices)).filter_by(name='Govind Pant').one()
+
+# delete related objects
+class Customer(Base):
+   __tablename__ = 'customers'
+
+   id = Column(Integer, primary_key = True)
+   name = Column(String)
+   address = Column(String)
+   email = Column(String)
+   invoices = relationship(
+      "Invoice",
+      order_by = Invoice.id,
+      back_populates = "customer",
+      cascade = "all,               # important change here
+      delete, delete-orphan"        # important change here
+   )
