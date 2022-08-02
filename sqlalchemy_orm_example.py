@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine. text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, subqueryload, joinedload
 from sqlalchemy import and_, or_
 
 # declaring mapping
@@ -329,7 +329,7 @@ s = session.query(Invoice).filter(Invoice.invno.contains([3,4,5])) # used for on
 s = session.query(Customer).filter(Customer.invoices.any(Invoice.invno==11))
 
 # SQL expressions:
-# SELECT invoices.id 
+# SELECT invoices.id
 # AS invoices_id, invoices.custid
 # AS invoices_custid, invoices.invno
 # AS invoices_invno, invoices.amount
@@ -341,3 +341,57 @@ s = session.query(Customer).filter(Customer.invoices.any(Invoice.invno==11))
 #    WHERE customers.id = invoices.custid
 #    AND customers.name = ?)
 s = session.query(Invoice).filter(Invoice.customer.has(name = 'Arjun Pandit'))
+
+# Eager Loading
+# subquery load SQL expression:
+# SELECT customers.id
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email
+# FROM customers
+# WHERE customers.name = ?
+# ('Govind Pant',)
+#
+# SELECT invoices.id
+# AS invoices_id, invoices.custid
+# AS invoices_custid, invoices.invno
+# AS invoices_invno, invoices.amount
+# AS invoices_amount, anon_1.customers_id
+# AS anon_1_customers_id
+# FROM (
+#    SELECT customers.id
+#    AS customers_id
+#    FROM customers
+#    WHERE customers.name = ?)
+#
+# AS anon_1
+# JOIN invoices
+# ON anon_1.customers_id = invoices.custid
+# ORDER BY anon_1.customers_id, invoices.id 2018-06-25 18:24:47,479
+# INFO sqlalchemy.engine.base.Engine ('Govind Pant',)
+c1 = session.query(Customer).options(subqueryload(Customer.invoices)).filter_by(name = 'Govind Pant').one()
+print (c1.name, c1.address, c1.email)
+
+for x in c1.invoices:
+   print ("Invoice no : {}, Amount : {}".format(x.invno, x.amount))
+
+# join load SQL expression:
+# SELECT customers.id 
+# AS customers_id, customers.name
+# AS customers_name, customers.address
+# AS customers_address, customers.email
+# AS customers_email, invoices_1.id
+# AS invoices_1_id, invoices_1.custid
+# AS invoices_1_custid, invoices_1.invno
+# AS invoices_1_invno, invoices_1.amount
+# AS invoices_1_amount
+#
+# FROM customers
+# LEFT OUTER JOIN invoices
+# AS invoices_1
+# ON customers.id = invoices_1.custid
+#
+# WHERE customers.name = ? ORDER BY invoices_1.id
+# ('Govind Pant',)
+c1 = session.query(Customer).options(joinedload(Customer.invoices)).filter_by(name='Govind Pant').one()
